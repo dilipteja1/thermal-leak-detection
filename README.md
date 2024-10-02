@@ -20,14 +20,14 @@ This tool relies on exiftool. It should be available to many operating systems i
 
 It also needs Python and few python packages. Create a virtual env with the packages installed or install them globally 
 
-> *#* pip install -r requirements.txt\
+> *#* pip install -r requirements.txt
 
 This will create an excel sheet with all the tags extracted and attached to the image.
 
 # toml 
 toml file is like a configuration file where one can change the configuration or settings. In our case, in toml file, except for the image tags, other meta data should be updated by the Inspector while collecting the data .
 
-The **tags.toml file** is the file in which all the meta data tags related to a image are placed. They need to be updated by the user to which ever tags they want to extract \
+The **tags.toml file** is the file in which all the meta data tags related to a image are placed. They need to be updated by the user to which ever tags they want to extract 
 > Provide images folder in the **path** tag in the tags.toml file \
 > Provide window id in the **id** tag in the tags.toml file
 1. images_path
