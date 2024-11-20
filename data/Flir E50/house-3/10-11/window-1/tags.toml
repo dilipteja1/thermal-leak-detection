@@ -1,0 +1,54 @@
+# file to provide common meta data across all the images of a window
+# please provide "NA" for the fields which dont have the information
+
+[data_path]
+id = "1"
+path = "C:\Users\tejad\OneDrive\Desktop\dataset\Flir E50\10-9\window-1"
+
+[building]
+# type: townhouse, apartment
+building_type = "townhouse"
+no_of_rooms = 5
+no_of_floors = 2
+
+[room]
+floor_number = 1
+area = "NA"
+
+[environment]
+indoor_temperature = 66
+outdoor_temperature = 50
+wind = 5
+home_set_temperature = 69
+
+[window]
+window_type = "Sliding"
+partitions = 2
+material = "glass with aluminuim alloy"
+facing = "NW"
+panes = 2
+
+# image tags to be extracted from the meta data of the image.
+# non editable and fixed
+# reference : https://exiftool.org/TagNames/index.html
+
+[image_tags.file]
+filename = "FileName"
+#filetype = "FileType"
+#imagewidth = "ImageWidth"
+#imageheight = "ImageHeight"
+#make = "Make"
+#model = "Model"
+
+[image_tags.app1]
+datatime = "DateTimeOriginal"
+emmisivity = "Emissivity"
+relativehumidity = "RelativeHumidity"
+gpslatitude = "GPSLatitude"
+gpslongitude = "GPSLongitude"
+#atmospherictemperature = "AtmosphericTemperature"
+#Thermalimagewidth = "RawThermalImageWidth"
+#thermalimageheight = "RawThermalImageHeight"
+#palettename = "PaletteName"
+
+

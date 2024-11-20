@@ -2,8 +2,8 @@
 # please provide "NA" for the fields which dont have the information
 
 [data_path]
-id = ""
-path = ''
+id = "1"
+path = 'C:\Users\tejad\OneDrive\Desktop\dataset\Flir E50\10-9\window-1\IR'
 
 [building]
 # type: townhouse, apartment
@@ -16,10 +16,10 @@ floor_number = 1
 area = "NA"
 
 [environment]
-indoor_temperature = 77
-outdoor_temperature = 66
-wind = 7
-home_set_temperature = 79
+indoor_temperature = 66
+outdoor_temperature = 50
+wind = 5
+home_set_temperature = 69
 
 [window]
 window_type = "Sliding"
