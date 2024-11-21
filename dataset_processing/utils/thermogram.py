@@ -17,11 +17,11 @@ class Thermal:
         self.cm = camera_meta_data
 
     @property
-    def thermal_image(self) -> Optional[Array[np.uint8, ..., ..., 3]]:
+    def get_thermal(self) -> Optional[Array[np.uint8, ..., ..., 3]]:
         return self.thermogram.render()
 
     @property
-    def set_visual(self):
+    def get_visual(self):
         """ visual image embedded or a seperated image"""
         if self.get_camera == Camera.EDGEPRO:
             return self.thermogram.optical_pil
@@ -33,4 +33,4 @@ class Thermal:
     @property
     def get_camera(self) -> [str, None]:
         """ Get the camera used to capture the thermal image """
-        return Camera.E50 if Camera.E50 in self.cm.make else Camera.EDGEPRO
+        return Camera.E50 if Camera.E50 in self.cm.model else Camera.EDGEPRO

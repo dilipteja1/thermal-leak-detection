@@ -1,8 +1,9 @@
-from __future__ import print_function
-import numpy as np
 import cv2
+import matplotlib.pyplot as plt
+import numpy as np
 import os
 import math
+import pathlib
 
 MAX_FEATURES = 500
 GOOD_MATCH_PERCENT = 0.15
@@ -95,3 +96,38 @@ def register2(thermal_image_file, visual_image_file):
 
 
 
+def otsu_thresholding(image, display=False):
+    """
+        method to perform otsu thresholding on the thermal image
+    Returns:
+        a binary image which specifies two different classes
+    """
+    if isinstance(image, str):
+        image = cv2.imread(pathlib.Path(image))
+
+    # convert to grayscale
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Apply Gaussian Blur to reduce noise before thresholding
+    blurred_image = cv2.GaussianBlur(image, (5, 5), 0)
+
+    # Apply Otsu's thresholding
+    # cv2.THRESH_BINARY applies binary thresholding
+    # cv2.THRESH_OTSU flag automatically determines the threshold value
+    threshold, thresholded_image = cv2.threshold(blurred_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # Display the original and threshold images
+    if display:
+        plt.figure(figsize=(10, 5))
+        plt.subplot(1, 2, 1)
+        plt.title("Original Image")
+        plt.imshow(image, cmap='gray')
+
+        plt.subplot(1, 2, 2)
+        plt.title("Otsu Thresholding")
+        plt.imshow(thresholded_image, cmap='gray')
+        plt.show()
+
+    return threshold, thresholded_image
+
+
+# otsu_thresholding("../../IR_8138.jpg", display=False)
