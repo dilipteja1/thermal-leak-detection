@@ -1,13 +1,14 @@
 import cv2
 import matplotlib.pyplot as plt
 
+
 def otsu_thresholding(thermal_image):
     """
         method to perform otsu thresholding on the thermal image
     Returns:
         a binary image which specifies two different classes
     """
-
+    thermal_image = cv2.imread(thermal_image)
     thermal_image = cv2.cvtColor(thermal_image, cv2.COLOR_BGR2GRAY)
     # Apply Gaussian Blur to reduce noise before thresholding
     blurred_image = cv2.GaussianBlur(thermal_image, (5, 5), 0)
@@ -30,3 +31,5 @@ def otsu_thresholding(thermal_image):
 
     return thresholded_image
 
+
+otsu_thresholding(r"C:\Users\tejad\programming\Projects\Sustainable_projects\Thermal-leak-detection\data_test\house-3\10-9\window-1\IR_8148.jpg")

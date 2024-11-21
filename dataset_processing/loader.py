@@ -8,12 +8,15 @@ from metadata import ImageMetaData
 from utils.thermogram import Thermal
 from constants import Camera
 
+DATASET_PATH = "../test_data"
+TEST_DATA_PATH = "../test_data_points"
+PROCESSED_TEST_DATA_PATH = "../test_data_processed"
 
-# --input_dir='../../data_test'
 class RawDataLoader:
-    def __init__(self, input_path=Path('../data_test'), output_path=Path("./processed_data")):
-        self.input_dir = input_path
-        self.output_dir = output_path
+    def __init__(self, input_path=DATASET_PATH, output_path=PROCESSED_TEST_DATA_PATH):
+        # paths
+        self.input_path = input_path
+        self.output_path = output_path
         self.thermal_image_file = None  # path of the thermal image
         self.data_point = defaultdict(str)
         self.cm = [ImageMetaData, None]
