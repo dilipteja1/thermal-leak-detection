@@ -120,7 +120,7 @@ def otsu_thresholding(image, display=False):
         plt.figure(figsize=(10, 5))
         plt.subplot(1, 2, 1)
         plt.title("Original Image")
-        plt.imshow(image, cmap='gray')
+        plt.imshow(image, cmap='RGB')
 
         plt.subplot(1, 2, 2)
         plt.title("Otsu Thresholding")
@@ -130,4 +130,4 @@ def otsu_thresholding(image, display=False):
     return threshold, thresholded_image
 
 
-# otsu_thresholding("../../IR_8138.jpg", display=False)
+# otsu_thresholding("../../IR_8138.jpg", display=True)

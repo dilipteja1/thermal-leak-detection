@@ -21,8 +21,9 @@ class DataReader:
         # paths
         self.input_path = input_path
         self.output_path = output_path
-        self.cm = [ImageMetaData, None]
-        self.thermal = [Thermal, None]
+        self.thermal_image_file = None
+        self.cm: [ImageMetaData, None]
+        self.thermogram: [Thermal, None]
         self.camera = [str, None]
         self.training_list = []
         self.testing_list = []
@@ -84,31 +85,32 @@ class DataReader:
             for filename in filenames:
                 if filename.__contains__("IR"):
                     image = os.path.join(folder_name, filename)
-                    self.training_list.append(self.create_data_point(image))
+                    self.thermal_image_file = image
+                    self.cm = ImageMetaData(self.thermal_image_file)
+                    self.training_list.append(self.create_data_point())
         self.save_json()
 
     def expand_data_point(self, dp):
         """takes json data point and generates numpy arrays into it
             :return
-                dp with more
+                dp with more attributes
         """
-        self.cm = ImageMetaData(dp['thermal_image_path'])
-        thermogram =  thermogram = Thermal(dp['thermal_image_path'], dp['visual_image_path'], self.cm)
-        dp['raw_thermal'] = thermogram.get_thermal
-        dp['raw_visual'] = thermogram.get_visual
+        self.thermal_image_file = dp['thermal_image_path']
+        self.cm = ImageMetaData(self.thermal_image_file)
+        self.thermal = Thermal(self.thermal_image_file, self.get_visual_image_file, self.cm)
+        dp['raw_thermal'] = self.thermal.get_thermal  # grayscale palette thermal image
+        dp['raw_visual'] = self.thermal.get_visual
+        dp['fahrenheit'] = self.thermal.thermogram.fahrenheit
         return dp
-    def create_data_point(self, image):
+    def create_data_point(self):
         """
             takes in thermal image file name and folder names and creates a data point
         :return:
             dictionary
         """
         dp = {}
-        dp['thermal_image_path'] = image
-        self.cm = ImageMetaData(dp['thermal_image_path'])
-        dp['visual_image_path'] = str(self.get_visual_image_file())
-
-
+        dp['thermal_image_path'] = self.thermal_image_file
+        dp['visual_image_path'] = self.get_visual_image_file
         # todo to call the aligner
         dp['aligned_visual'] = ""
         dp['date_taken'] = self.cm.get_date
@@ -117,7 +119,7 @@ class DataReader:
         dp['outdoor_temperature'] = 64
         dp['leak_info'] = self.cm.get_opening
         dp['mask'] = None
-        dp['window_info'] = None
+        dp['window_name'] = self.cm.get_window
         return dp
 
     def get_indoor_temperature(self):
@@ -138,7 +140,7 @@ class DataReader:
         #todo get the outdoor temperature values from Weather.com
         return self.df_collection.loc[
             (self.df_collection['House'] == 1 & self.df_collection['Date'] == self.cm.get_date.date()), 'TempFOutsideStart']
-
+    @property
     def get_visual_image_file(self):
         """
             Picks an IR image file and get the corresponding DC image file
@@ -155,12 +157,13 @@ class DataReader:
             visual_image_name = "DC_" + str(visual_image_number) + ".jpg"
             visual_image_file = os.path.join(folder_name, visual_image_name)
             if os.path.exists(visual_image_file):
-                print(f"Visual Image found: {visual_image_name}")
-                return Path(visual_image_file)
+                return str(visual_image_file)
             else:
                 print(
                     f"visual image for the corresponding Thermal image {os.path.basename(self.thermal_image_file)} not found")
                 return None
+
+
 
     def pre_annotate(self):
         """
@@ -170,7 +173,8 @@ class DataReader:
             data point with image processed information
         """
         thermal_ip = ThermalIP(self.training_list)
-        thermal_ip.thresholding_wo_normalization()
+        # thermal_ip.save_thermal_images()
+        thermal_ip.thresholding_6()
         # if self.cm.get_camera == Camera.E50:
         #     alinged_visual = thermal_processor.align_visual()
         #     self.thermal.visual = alinged_visual

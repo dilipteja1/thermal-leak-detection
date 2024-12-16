@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from flyr import unpack
 from nptyping import Array
-
+from matplotlib import pyplot as plt
 from dataset_processing.constants import Camera
 from dataset_processing.metadata import ImageMetaData
 
@@ -18,7 +18,7 @@ class Thermal:
 
     @property
     def get_thermal(self) -> Optional[Array[np.uint8, ..., ..., 3]]:
-        return self.thermogram.render()
+        return self.thermogram.render(palette='grayscale')
 
     @property
     def get_visual(self):
@@ -34,3 +34,14 @@ class Thermal:
     def get_camera(self) -> [str, None]:
         """ Get the camera used to capture the thermal image """
         return Camera.E50 if Camera.E50 in self.cm.model else Camera.EDGEPRO
+
+    # @property
+    # def get_normalized_thermal(self):
+    #     return self.thermogram.render(unit='fahrenheit', palette="grayscale")
+    #
+    # @property
+    # def get_normalized_grascale_thermal(self):
+    #     return cv2.cvtColor(self.get_normalized_thermal, cv2.COLOR_BGR2GRAY)
+    # @property
+    # def get_grayscale_thermal(self):
+    #     return cv2.cvtColor(self.get_thermal, cv2.COLOR_BGR2GRAY)

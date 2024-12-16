@@ -31,6 +31,9 @@ class ImageMetaData(CameraMetadata):
         return Camera.E50 if Camera.E50 in self.model else Camera.EDGEPRO
 
     @property
+    def get_image_name(self):
+        return self.image_path_parts[len(self.image_path_parts)-1]
+    @property
     def get_window(self)-> [str, None]:
         """gets the window name from the folder structure"""
         return self.image_path_parts[len(self.image_path_parts)-2]
