@@ -1,13 +1,13 @@
 import argparse
 import os
 import json
+from ctypes import Union
 from pathlib import Path
 import pandas as pd
 from datetime import datetime as dt
 from dataset_processing.utils.annotate import ThermalIP
-from metadata import ImageMetaData
-from utils.thermogram import Thermal
-from constants import Camera
+from datapoint import DataPoint
+import cv2
 
 DATASET_PATH = "../test_data"
 TEST_DATA_PATH = "../test_data_points"
@@ -16,17 +16,14 @@ DATASET_JSON = "dataset.json"
 EXCEL_DATA_PATH = "../thermal_collection.xlsx"
 
 
-class DataReader:
+class DataLoader:
     def __init__(self, input_path=DATASET_PATH, output_path=PROCESSED_DATASET_PATH):
         # paths
         self.input_path = input_path
         self.output_path = output_path
-        self.thermal_image_file = None
-        self.cm: [ImageMetaData, None]
-        self.thermogram: [Thermal, None]
-        self.camera = [str, None]
         self.training_list = []
         self.testing_list = []
+        self.data_point: Union[DataPoint, None]
 
         # excel data
         self.df_collection = None
@@ -81,45 +78,38 @@ class DataReader:
         else:
             self.read_excel()
 
+        # walking through the data from E50
         for folder_name, sub_folders, filenames in os.walk(self.input_path):
             for filename in filenames:
                 if filename.__contains__("IR"):
-                    image = os.path.join(folder_name, filename)
-                    self.thermal_image_file = image
-                    self.cm = ImageMetaData(self.thermal_image_file)
-                    self.training_list.append(self.create_data_point())
+                    dp = {}
+                    thermal_image_path = os.path.join(folder_name, filename)
+                    dp['thermal_image_path'] = thermal_image_path
+                    self.training_list.append(dp)
         self.save_json()
+        self.load()
 
     def expand_data_point(self, dp):
         """takes json data point and generates numpy arrays into it
             :return
                 dp with more attributes
         """
-        self.thermal_image_file = dp['thermal_image_path']
-        self.cm = ImageMetaData(self.thermal_image_file)
-        self.thermal = Thermal(self.thermal_image_file, self.get_visual_image_file, self.cm)
-        dp['raw_thermal'] = self.thermal.get_thermal  # grayscale palette thermal image
-        dp['raw_visual'] = self.thermal.get_visual
-        dp['fahrenheit'] = self.thermal.thermogram.fahrenheit
-        return dp
-    def create_data_point(self):
-        """
-            takes in thermal image file name and folder names and creates a data point
-        :return:
-            dictionary
-        """
-        dp = {}
-        dp['thermal_image_path'] = self.thermal_image_file
-        dp['visual_image_path'] = self.get_visual_image_file
+        self.data_point = DataPoint(dp['thermal_image_path'])
+
+        dp['raw_thermal'] = self.data_point.get_thermal  # grayscale palette thermal image
+        dp['raw_visual'] = self.data_point.get_visual
+        dp['thermal_grayscale'] = cv2.cvtColor(dp['raw_thermal'], cv2.COLOR_BGR2GRAY)
+        dp['fahrenheit'] = self.data_point.thermogram.fahrenheit
         # todo to call the aligner
         dp['aligned_visual'] = ""
-        dp['date_taken'] = self.cm.get_date
+        dp['date_taken'] = self.data_point.get_date
         # todo get the indoor and outdoor temp from the methods
         dp['indoor_temperature'] = 68
         dp['outdoor_temperature'] = 64
-        dp['leak_info'] = self.cm.get_opening
+        dp['leak_info'] = self.data_point.get_opening
         dp['mask'] = None
-        dp['window_name'] = self.cm.get_window
+        dp['window_name'] = self.data_point.get_window
+
         return dp
 
     def get_indoor_temperature(self):
@@ -140,32 +130,8 @@ class DataReader:
         #todo get the outdoor temperature values from Weather.com
         return self.df_collection.loc[
             (self.df_collection['House'] == 1 & self.df_collection['Date'] == self.cm.get_date.date()), 'TempFOutsideStart']
-    @property
-    def get_visual_image_file(self):
-        """
-            Picks an IR image file and get the corresponding DC image file
-            and visual image
-            #TODO make a diverse data point (text + images)
-        Returns:
-            data point tuple
-        """
-        if self.cm.get_camera == Camera.E50:
-            folder_name = os.path.dirname(self.thermal_image_file)
-            file_name, extension = os.path.splitext(os.path.basename(self.thermal_image_file))
-            thermal_image_number = int(file_name.split('_')[1])
-            visual_image_number = thermal_image_number + 1
-            visual_image_name = "DC_" + str(visual_image_number) + ".jpg"
-            visual_image_file = os.path.join(folder_name, visual_image_name)
-            if os.path.exists(visual_image_file):
-                return str(visual_image_file)
-            else:
-                print(
-                    f"visual image for the corresponding Thermal image {os.path.basename(self.thermal_image_file)} not found")
-                return None
 
-
-
-    def pre_annotate(self):
+    def annotate(self):
         """
             performs bunchof image processing techniques so that the resulting image is ready for
             annotation
@@ -174,7 +140,8 @@ class DataReader:
         """
         thermal_ip = ThermalIP(self.training_list)
         # thermal_ip.save_thermal_images()
-        thermal_ip.thresholding_6()
+        # thermal_ip.thresholding_4()
+        thermal_ip.manual_thresholding_batch2()
         # if self.cm.get_camera == Camera.E50:
         #     alinged_visual = thermal_processor.align_visual()
         #     self.thermal.visual = alinged_visual
@@ -200,6 +167,6 @@ if __name__ == "__main__":
     parser.add_argument("--output_dir", "--output-dir", help="output directory")
 
     args = parser.parse_args()
-    reader = DataReader(input_path=DATASET_PATH, output_path=PROCESSED_DATASET_PATH)
+    reader = DataLoader(input_path=DATASET_PATH, output_path=PROCESSED_DATASET_PATH)
     reader.load()
-    reader.pre_annotate()
+    reader.annotate()

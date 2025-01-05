@@ -84,6 +84,5 @@ def gradient():
         cv.imwrite(os.path.join(Gradient, f'gradient-{image_name}.jpg'), normalized_magnitude)
 
 
-gradient()
 # adaptive_thresholding()
 # all_temp_threshold()
