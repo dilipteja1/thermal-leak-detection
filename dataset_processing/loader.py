@@ -4,17 +4,21 @@ import json
 from ctypes import Union
 from pathlib import Path
 import pandas as pd
+import numpy as np
 from datetime import datetime as dt
 from dataset_processing.utils.annotate import ThermalIP
+from openpyxl import Workbook as wb
+from openpyxl import load_workbook
 from datapoint import DataPoint
 import cv2
+from constants import Annotation 
 
-DATASET_PATH = "../test_data"
+DATASET_PATH = "test_data"
 TEST_DATA_PATH = "../test_data_points"
 PROCESSED_DATASET_PATH = "../test_data_processed"
 DATASET_JSON = "dataset.json"
-EXCEL_DATA_PATH = "../thermal_collection.xlsx"
-
+EXCEL_DATA_PATH = "thermal_collection.xlsx"
+SHEET_NAME = "Annotations"
 
 class DataLoader:
     def __init__(self, input_path=DATASET_PATH, output_path=PROCESSED_DATASET_PATH):
@@ -23,7 +27,6 @@ class DataLoader:
         self.output_path = output_path
         self.training_list = []
         self.testing_list = []
-        self.data_point: Union[DataPoint, None]
 
         # excel data
         self.df_collection = None
@@ -79,12 +82,13 @@ class DataLoader:
             self.read_excel()
 
         # walking through the data from E50
-        for folder_name, sub_folders, filenames in os.walk(self.input_path):
+        for folder_name, _, filenames in os.walk(self.input_path):
             for filename in filenames:
                 if filename.__contains__("IR"):
                     dp = {}
                     thermal_image_path = os.path.join(folder_name, filename)
-                    dp['thermal_image_path'] = thermal_image_path
+                    dp["thermal_img_name"] = filename
+                    dp['thermal_img_path'] = thermal_image_path
                     self.training_list.append(dp)
         self.save_json()
         self.load()
@@ -94,21 +98,20 @@ class DataLoader:
             :return
                 dp with more attributes
         """
-        self.data_point = DataPoint(dp['thermal_image_path'])
-
-        dp['raw_thermal'] = self.data_point.get_thermal  # grayscale palette thermal image
-        dp['raw_visual'] = self.data_point.get_visual
+        data_point = DataPoint(dp['thermal_img_path'])
+        dp['raw_thermal'] = data_point.get_thermal  # grayscale palette thermal image
+        dp['raw_visual'] = data_point.get_visual
         dp['thermal_grayscale'] = cv2.cvtColor(dp['raw_thermal'], cv2.COLOR_BGR2GRAY)
-        dp['fahrenheit'] = self.data_point.thermogram.fahrenheit
+        dp['fahrenheit'] = data_point.thermogram.fahrenheit
         # todo to call the aligner
         dp['aligned_visual'] = ""
-        dp['date_taken'] = self.data_point.get_date
+        dp['date_taken'] = data_point.get_date
         # todo get the indoor and outdoor temp from the methods
         dp['indoor_temperature'] = 68
         dp['outdoor_temperature'] = 64
-        dp['leak_info'] = self.data_point.get_opening
+        dp['leak_info'] = data_point.get_opening
         dp['mask'] = None
-        dp['window_name'] = self.data_point.get_window
+        dp['window_name'] = data_point.get_window
 
         return dp
 
@@ -131,6 +134,54 @@ class DataLoader:
         return self.df_collection.loc[
             (self.df_collection['House'] == 1 & self.df_collection['Date'] == self.cm.get_date.date()), 'TempFOutsideStart']
 
+    def construct_annotation(self, dp) -> list:
+        data_point = DataPoint(dp["thermal_img_path"])
+        annotation = {}
+        try:
+            annotation[Annotation.IMAGE_NAME.value] = dp["thermal_img_name"]
+            annotation[Annotation.DATE_TAKEN.value] = data_point.get_date
+            annotation[Annotation.LEAK_SIGNATURE.value] = data_point.get_opening
+            annotation[Annotation.WINDOW_NAME.value] = data_point.get_window
+            annotation[Annotation.INSIDE_TEMP.value] = 68
+            annotation[Annotation.OUTSIDE_TEMP.value] = 55
+            annotation[Annotation.MIN_TEMP.value] = int(np.min(dp["fahrenheit"]))
+            annotation[Annotation.MAX_TEMP.value] = int(np.max(dp["fahrenheit"]))
+            print(annotation)
+            annotation = dict(sorted(annotation.items()))
+        except:
+            print("error while contructing annotation")
+        return [*annotation.values()]
+
+    def update_annotation_sheet(self, xlsx_path = EXCEL_DATA_PATH) -> bool:
+
+        workbook = load_workbook(filename=xlsx_path)
+        try:
+            # access the sheet if already exists
+            if SHEET_NAME in workbook.sheetnames:
+                sheet = workbook[SHEET_NAME]
+                print(f"Accessing sheet: {sheet}")
+            else:
+                sheet = workbook.create_sheet(title  = SHEET_NAME)
+            
+            header_row = 1 # first row is the header row
+            for index in range(len(self.training_list)):
+                dp = self.training_list[index]
+                found = False
+                for row in sheet.iter_rows(values_only=True):
+                    if dp["thermal_img_name"] in row:
+                        found = True
+                        break
+                if not found:
+                    annotation = self.construct_annotation(dp)
+                    sheet.append(annotation)
+        except Exception as e:
+            print("error")
+            print("Saving incomplete annotation sheet")
+        finally:
+            workbook.save(filename=xlsx_path)
+            print("Saved Succesfully")
+
+
     def annotate(self):
         """
             performs bunchof image processing techniques so that the resulting image is ready for
@@ -138,35 +189,5 @@ class DataLoader:
         Returns:
             data point with image processed information
         """
-        thermal_ip = ThermalIP(self.training_list)
-        # thermal_ip.save_thermal_images()
-        # thermal_ip.thresholding_4()
-        thermal_ip.manual_thresholding_batch2()
-        # if self.cm.get_camera == Camera.E50:
-        #     alinged_visual = thermal_processor.align_visual()
-        #     self.thermal.visual = alinged_visual
-        # palettes = ["turbo", "cividis", "inferno", "grayscale", "hot"]
-        # for p in palettes:
-        #     # The below call returns a Pillow Image object.
-        #     # A sibling method called `render` returns a numpy array.
-        #     render = self.thermal.thermogram.render_pil(
-        #         min_v=40,
-        #         max_v=50,
-        #         unit="fahrenheit",
-        #         palette=p,
-        #     )
-        #     render.save(f"render-{p}.png")
-            # mask = self.thermal.thermogram.fahrenheit > self.thermal.thermogram.fahrenheit.mean()
-            # self.thermal.thermogram.picture_in_picture_pil(mask=mask, mask_mode="classical").save("pip_classical.png")
-            # self.thermal.thermogram.picture_in_picture_pil(mask=mask, mask_mode="alternative").save("pip_alternative.png")
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Data set loader for pre processing")
-    parser.add_argument("--input_dir", "--input-dir", help="the dataset directory to be processed")
-    parser.add_argument("--output_dir", "--output-dir", help="output directory")
-
-    args = parser.parse_args()
-    reader = DataLoader(input_path=DATASET_PATH, output_path=PROCESSED_DATASET_PATH)
-    reader.load()
-    reader.annotate()
+        # thermal_ip = ThermalIP(self.training_list)
+        self.update_annotation_sheet()

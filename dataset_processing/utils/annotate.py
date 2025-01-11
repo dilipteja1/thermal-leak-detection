@@ -8,8 +8,8 @@ from dataset_processing.constants import Camera
 import math
 import cv2
 
-from dataset_processing.utils.ip_algorithms import otsu_thresholding
-from dataset_processing.datapoint import DataPoint
+from utils.ip_algorithms import otsu_thresholding
+from datapoint import DataPoint
 
 # OUTPUT_PATH = "../../test_data_points/"
 TEST_IMAGES = "../../../test_data"
@@ -542,7 +542,7 @@ class ThermalIP:
                     ax.axis('off')
             # Save the plot as an image
             output_file = os.path.join(output_dir, f"{data_point.get_image_name}")  # Change the filename as needed
-            plt.savefig(output_file, bbox_inches='tight', dpi=300)  # Save the plot as an image file
+            plt.savefig(output_file, bbox_inches='tight', dpi= f300)  # Save the plot as an image file
             print(f"Plot saved as {output_file}")
 
         print('Thresholding successful')

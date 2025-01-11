@@ -5,7 +5,7 @@ import pathlib
 import numpy as np
 import cv2
 from flyr.camera_metadata import CameraMetadata
-from dataset_processing.constants import Camera
+from constants import Camera
 import exiftool
 import datetime
 from collections import defaultdict
@@ -59,6 +59,7 @@ class DataPoint():
     def get_opening(self) -> [str, None]:
         """gets the opening of the window for annotation purposes"""
         return self.image_path_parts[len(self.image_path_parts)-3]
+    
     @property
     def get_date(self) -> [datetime,None]:
         """gets the date of the image taken from the folder structure"""

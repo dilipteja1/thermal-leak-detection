@@ -1,3 +1,5 @@
+from enum import Enum
+
 class LeakageTypes(object):
     AIR_LEAK_TOP = "Air leakage at top"
     AIR_LEAK_BOTTOM = "Air leakage at bottom"
@@ -16,4 +18,12 @@ class Camera(object):
     E50_OPTICAL_HORIZONTAL_FOV = 53
     E50_OPTICAL_VERTICAL_FOV = 41
 
-
+class Annotation(Enum):
+    IMAGE_NAME = 1
+    DATE_TAKEN = 2
+    LEAK_SIGNATURE = 3
+    WINDOW_NAME = 4
+    INSIDE_TEMP = 5
+    OUTSIDE_TEMP = 6
+    MIN_TEMP = 7
+    MAX_TEMP = 8
